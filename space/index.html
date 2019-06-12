@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Space Ranger</title>
+    <script src="../scripts/phaser.min.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="text/javascript">
+
+        window.onload = function () {
+
+            const speed = 5;
+            var game = new Phaser.Game(1800, 850, Phaser.CANVAS, 'space-ranger', { preload: preload, create: create, update: update, render: render });
+            var spaceship;
+            var timer;
+            var score = 0;
+            var scoreText;
+            var bullets = [];
+            let count = 0;
+
+            function preload() {
+                game.stage.backgroundColor = "black";
+                game.load.spritesheet('spaceship', './assets/spaceship-1.png', 970, 1330, 1);
+                game.load.spritesheet('bullet', './assets/enemy.png', 970, 1330, 1);
+                game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+                game.scale.pageAlignHorizontally = true;
+                game.scale.pageAlignVertically = true;
+                game.physics.setBoundsToWorld();
+            }
+
+            function create() {
+
+                scoreText = game.add.text(50, 50, 'Score: 0', { fontSize: '25px', fill: 'white' });
+
+                spaceship = game.add.sprite(100, game.height / 2, 'spaceship');
+                spaceship.scale.setTo(0.4, 0.4);
+                game.physics.enable(spaceship, Phaser.Physics.ARCADE);
+                spaceship.body.collideWorldBounds = true;
+                spaceship.body.checkCollision.up = false;
+                spaceship.body.checkCollision.down = false;
+                spaceship.body.immovable = true;
+
+                spaceship.body.onCollide = new Phaser.Signal();
+                spaceship.body.onCollide.add(function () {
+                    alert('Game over!\nYour total score: ' + score);
+                    location.reload();
+                }, game);
+
+                releaseBullet();
+            }
+
+            function update() {
+                if (game.time.now > timer) {
+                    releaseBullet();
+                }
+
+                if (game.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
+                    spaceship.position.x = spaceship.position.x - speed;
+                } else if (game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)) {
+                    spaceship.position.x = spaceship.position.x + speed;
+                }
+
+                if (game.input.keyboard.isDown(Phaser.Keyboard.UP)) {
+                    spaceship.position.y = spaceship.position.y - speed;
+                } else if (game.input.keyboard.isDown(Phaser.Keyboard.DOWN)) {
+                    spaceship.position.y = spaceship.position.y + speed;
+                }
+
+                bullets.map(function (bullet) {
+                    game.physics.arcade.collide(spaceship, bullet);
+                });
+            }
+
+            function releaseBullet() {
+                let bullet = game.add.sprite(game.width, game.world.randomY, 'bullet');
+                bullet.name = 'bullet' + count++;
+                bullet.scale.setTo(0.2, 0.2);
+                game.physics.enable(bullet, Phaser.Physics.ARCADE);
+                bullet.animations.play('release', 1, true);
+                bullet.body.velocity.x = -300;
+                timer = game.time.now + 1000;
+                bullet.checkWorldBounds = true;
+                bullet.events.onOutOfBounds.add(function () {
+                    score += 100;
+                    scoreText.setText('Score: ' + score);
+                    bullets = bullets.filter(function (arrayBullet) {
+                        return arrayBullet.name !== bullet.name;
+                    });
+                }, game);
+                bullets.push(bullet);
+            }
+
+            function render() {
+                // game.debug.bodyInfo(spaceship, 16, 24);
+            }
+        };
+
+
+    </script>
+
+</body>
+
+</html>

@@ -61,10 +61,12 @@
             }
             function create() {
 
+                // Initialize the game parameters
                 isGameOver = false;
                 gamePaused = game.add.bitmapText(game.width - 350, 50, 'font', EMPTY_TEXT, fontSize);
                 scoreText = game.add.bitmapText(50, 50, 'font', getScoreText(0), fontSize);
 
+                // Add spaceship and it's constraints
                 spaceship = game.add.sprite(100, game.height / 2, 'spaceship');
                 spaceship.scale.setTo(0.3);
                 game.physics.enable(spaceship, Phaser.Physics.ARCADE);
@@ -72,21 +74,44 @@
                 spaceship.body.checkCollision.up = false;
                 spaceship.body.checkCollision.down = false;
                 spaceship.body.immovable = true;
+
+                // Spaceship colliding logic
                 spaceship.body.onCollide = new Phaser.Signal();
-                spaceship.body.onCollide.add(function () {
-                    isGameOver = true;
-                }, game);
+                spaceship.body.onCollide.add(spaceshipCollision, game);
 
+                // Release first enemy
                 releaseEnemy();
+            }
 
+            function spaceshipCollision() {
+                isGameOver = true;
+            }
+            function releaseEnemy() {
+                // Release a new enemy
+                let enemy = game.add.sprite(game.width, game.world.randomY, 'enemy');
+                enemy.name = 'enemy' + count++;
+                enemy.scale.setTo(0.15);
+                game.physics.enable(enemy, Phaser.Physics.ARCADE);
+                enemy.checkWorldBounds = true;
+                enemy.animations.play('release', 1, true);
+                enemy.body.velocity.x = ENEMY_VELOCITY;
+                enemy.events.onOutOfBounds.add(onEnemyOut, this);
+                enemies.push(enemy);
+
+                // To maintain timer for frequency
+                timer = game.time.now + ENEMY_RELEASE_FREQUENCY;
+
+                // Keep Score always on top
                 game.world.bringToTop(scoreText);
             }
 
             function update() {
+                // Release an enemy at ENEMY_RELEASE_FREQUENCY frequency
                 if (game.time.now > timer) {
                     releaseEnemy();
                 }
 
+                // Spaceship movement
                 if (game.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
                     spaceship.position.x = spaceship.position.x - speed;
                 } else if (game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)) {
@@ -99,10 +124,11 @@
                     spaceship.position.y = spaceship.position.y + speed;
                 }
 
+                // Game pause and restart
                 window.onkeypress = function (key) {
                     if (key.keyCode === Phaser.Keyboard.SPACEBAR) {
                         if (isGameOver) {
-                            console.log("Here");
+                            game.paused = false;
                             game.state.restart();
                         } else {
                             game.paused = !game.paused;
@@ -116,10 +142,12 @@
                     }
                 }
 
+                // Check collision for newly released enemies
                 enemies.map(function (enemy) {
                     game.physics.arcade.collide(spaceship, enemy);
                 });
 
+                // Check for GAME OVER
                 if (isGameOver) {
                     gameOver();
                 }
@@ -145,22 +173,6 @@
                 restartInstruction.y = game.height / 2 + gameOverText.textHeight / 2;
             }
 
-            function releaseEnemy() {
-                // Release a new enemy
-                let enemy = game.add.sprite(game.width, game.world.randomY, 'enemy');
-                enemy.name = 'enemy' + count++;
-                enemy.scale.setTo(0.15);
-                game.physics.enable(enemy, Phaser.Physics.ARCADE);
-                enemy.checkWorldBounds = true;
-                enemy.animations.play('release', 1, true);
-                enemy.body.velocity.x = ENEMY_VELOCITY;
-                enemy.events.onOutOfBounds.add(onEnemyOut, this);
-                enemies.push(enemy);
-
-                // To maintain timer for frequency
-                timer = game.time.now + ENEMY_RELEASE_FREQUENCY;
-            }
-
             function onEnemyOut(enemy) {
                 // Update score
                 score += SCORE_PER_ENEMY;
@@ -176,14 +188,12 @@
                     changeBackgroundColor();
                 }
             }
+
             function render() {
                 // game.debug.bodyInfo(spaceship, 16, 24);
             }
         };
-
-
     </script>
-
 </body>
 
 </html>

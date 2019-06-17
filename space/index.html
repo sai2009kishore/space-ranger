@@ -45,7 +45,7 @@
             function preload() {
 
                 game.load.bitmapFont('font', './fonts/font.png', './fonts/font.fnt');
-                game.load.spritesheet('spaceship', './assets/spaceship-1.png', 500, 500, 1);
+                game.load.spritesheet('spaceship', './assets/spaceship-1.png', 378, 445, 1);
                 game.load.spritesheet('enemy', './assets/enemy.png', 907, 907, 1);
 
                 game.physics.setBoundsToWorld();
@@ -190,7 +190,7 @@
             }
 
             function render() {
-                // game.debug.bodyInfo(spaceship, 16, 24);
+                game.debug.bodyInfo(spaceship, 16, 24);
             }
         };
     </script>

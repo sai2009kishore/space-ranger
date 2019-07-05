@@ -30,10 +30,10 @@
             const GAME_OVER_TEXT = 'GAME OVER\nYOUR SCORE: %score';
             const HIT_SPACE_TO_RESTART = 'HIT ENTER TO RESTART';
             const BULLET_LIMIT = 10;
+            const PAUSE_KEY = Phaser.Keyboard.ENTER;
             const getScoreText = function (score) {
                 return 'SCORE : ' + score;
             }
-            const PAUSE_KEY = Phaser.Keyboard.ENTER;
 
             var game = new Phaser.Game(1800, 850, Phaser.CANVAS, 'space-ranger', { preload: preload, create: create, update: update, render: render });
             var spaceship;
@@ -44,6 +44,7 @@
             var count = 0;
             var isGameOver = false;
             var bullet;
+            var explosion;
 
             function preload() {
 
@@ -52,6 +53,7 @@
                 game.load.spritesheet('spaceship', './assets/spaceship-1.png', 378, 445, 1);
                 game.load.spritesheet('enemy', './assets/enemy.png', 791, 534, 1);
                 game.load.spritesheet('bullet', './assets/bullet.png', 290, 134);
+                game.load.spritesheet('explosion', './assets/explosion.png', 192, 192);
 
                 // Game settings
                 game.physics.setBoundsToWorld();
@@ -62,10 +64,16 @@
                 changeBackgroundColor();
             }
 
+            /**
+             * Change the background to a random color
+             */
             function changeBackgroundColor() {
                 game.stage.backgroundColor = Phaser.Color.getRandomColor(50, 255, 255);
             }
 
+            /**
+             * Used to initialize the game parameters and objects
+             */
             function create() {
                 // Initialize the game parameters
                 isGameOver = false;
@@ -76,15 +84,17 @@
                 spaceship = game.add.sprite(100, game.height / 2, 'spaceship');
                 spaceship.scale.setTo(0.3);
                 game.physics.enable(spaceship, Phaser.Physics.ARCADE);
+
+                // Spaceship colliding logic
                 spaceship.body.collideWorldBounds = true;
                 spaceship.body.checkCollision.up = false;
                 spaceship.body.checkCollision.down = false;
                 spaceship.body.immovable = true;
-
-                // Spaceship colliding logic
                 spaceship.body.onCollide = new Phaser.Signal();
                 spaceship.body.onCollide.add(spaceshipCollision, game);
 
+
+                // Add bullets to the spaceship
                 bullet = game.add.weapon(BULLET_LIMIT, 'bullet');
                 bullet.bullets.setAll('scale.x', 0.3);
                 bullet.bullets.setAll('scale.y', 0.3);
@@ -99,11 +109,18 @@
                 releaseEnemy();
             }
 
+            /**
+             * Event that is triggered when spaceship collides with an enemy
+             */
             function spaceshipCollision() {
                 isGameOver = true;
             }
 
+            /**
+             * Used to release an enemy from a random position
+             */
             function releaseEnemy() {
+
                 // Release a new enemy
                 let enemy = game.add.sprite(game.width, game.world.randomY, 'enemy');
                 enemy.name = 'enemy' + count++;
@@ -114,6 +131,7 @@
                 enemy.body.velocity.x = ENEMY_VELOCITY;
                 enemy.events.onOutOfBounds.add(onEnemyOut, this);
                 enemies.push(enemy);
+                enemy.body.immovable = true;
 
                 // To maintain timer for frequency
                 timer = game.time.now + ENEMY_RELEASE_FREQUENCY;
@@ -122,6 +140,9 @@
                 game.world.bringToTop(scoreText);
             }
 
+            /**
+             * Used to continuously update the game
+             */
             function update() {
                 // Release an enemy at ENEMY_RELEASE_FREQUENCY frequency
                 if (game.time.now > timer) {
@@ -178,9 +199,17 @@
 
             function hitEnemy(enemy, bullet) {
                 updateScore();
+                let x = enemy.position.x - enemy.body.width;
+                let y = enemy.position.y - enemy.body.halfHeight;
                 // Destroy enemy and bullet
                 enemy.kill();
                 bullet.kill();
+
+                explosion = game.add.sprite(x, y, 'explosion');
+                explosion.animations.add('explode');
+                explosion.animations.play('explode', 5, false, true);
+                explosion.animations.currentAnim.speed = 10;
+                // explosion.kill();
             }
 
             function gameOver() {
